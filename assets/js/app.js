@@ -153,10 +153,18 @@
     }
     else if (kind === 'signup') {
       var email = d.email.trim().toLowerCase(), err = $('#err');
-      if (S.DB.users.some(function (x) { return x.email === email; })) { 
-        err.innerHTML = '<div class="msg err">' + L('emailTaken') + '</div>'; 
-        return; 
-      }
+      err.innerHTML = '<div class="msg info">Criando conta...</div>';
+      
+      // Chama o Supabase para cadastrar (sem a trava antiga)
+      S.signup(d.name.trim(), email, d.password, d.country).then(function(user) {
+        UI.toast('Conta criada com sucesso!');
+        UI.go('#/dashboard'); 
+        render();
+      }).catch(function(error) {
+        // Mostra o erro real do Supabase na tela
+        err.innerHTML = '<div class="msg err">' + error.message + '</div>'; 
+      });
+    }
       S.sha(d.password).then(function (h) {
         var nu = { id: S.uid(), name: d.name.trim(), email: email, hash: h, country: d.country, uni: d.uni, created: Date.now(), xp: 0, blocked: false, isAdmin: S.DB.users.length === 0 };
         S.DB.users.push(nu); 
