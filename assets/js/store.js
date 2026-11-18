@@ -4,7 +4,7 @@
 
   // ATENÇÃO: COLE A SUA CHAVE COMPLETA AQUI EMBAIXO
   var supabaseUrl = 'https://zatcmcmyhspxwqjzxtfg.supabase.co';
-  var supabaseKey = 'sb_publishable_GuoEZKjCvtDIPlS-lsfKRbg_GoTPe...'; 
+  var supabaseKey = 'sb_publishable_GueoZKjCvtDI9E-1sfKRbg_GoTPeXNR'; 
   
   // Inicializa o cliente do Supabase
   var supabase = window.supabase.createClient(supabaseUrl, supabaseKey);
