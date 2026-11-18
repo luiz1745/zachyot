@@ -4,7 +4,7 @@
 
   // ATENÇÃO: COLE A SUA CHAVE COMPLETA DO SUPABASE AQUI
   var supabaseUrl = 'https://zatcmcmyhspxwqjzxtfg.supabase.co';
-  var supabaseKey = 'sb_publishable_GuoEZKjCvtDIPlS-lsfKRbg_GoTPe...'; 
+  var supabaseKey = 'sb_publishable_GueoZKjCvtDI9E-1sfKRbg_GoTPeXNR'; 
   
   var supabase = window.supabase.createClient(supabaseUrl, supabaseKey);
   var LKEY = 'zachyot_lang';
