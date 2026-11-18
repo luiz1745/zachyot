@@ -17,7 +17,8 @@
   function go(h) { location.hash = h; }
   
   function lockBadge(tier) { 
-    var p = S.planByTier(tier); 
+    var plans = [{tier:1, name:'Basic'}, {tier:2, name:'Intermediate'}, {tier:3, name:'Complete'}];
+    var p = plans.filter(function(x){return x.tier === tier})[0]; 
     return '<span class="badge ' + (tier === 3 ? 'gold' : '') + '">' + L('choose') + ' ' + esc(p.name) + '</span>'; 
   }
   
@@ -38,7 +39,7 @@
       '<div class="site-header"><div class="wrap"><a class="logo" href="#/"><i>Z</i>Зачёт</a>' +
       '<nav class="main-nav" aria-label="Main"><a href="#/courses"' + on('#/courses') + '>' + L('courses') + '</a><a href="#/plans"' + on('#/plans') + '>' + L('plans') + '</a>' +
       (u ? '<a href="#/dashboard"' + on('#/dashboard') + '>' + L('myarea') + '</a>' : '') +
-      (u && u.isAdmin ? '<a href="#/admin"' + on('#/admin') + '>' + L('admin') + '</a>' : '') + '</nav>' +
+      (u && u.is_admin ? '<a href="#/admin"' + on('#/admin') + '>' + L('admin') + '</a>' : '') + '</nav>' +
       '<div class="head-actions"><div class="lang" role="group" aria-label="Language">' + langBtn('en') + langBtn('ru') + langBtn('pt') + langBtn('es') + '</div>' +
       (u ? '<button class="btn btn-light btn-sm" data-act="logout">' + L('logout') + '</button>'
          : '<a class="btn btn-light btn-sm" href="#/login">' + L('login') + '</a><a class="btn btn-yellow btn-sm" href="#/signup">' + L('signup') + '</a>') +
@@ -57,7 +58,15 @@
       intermediate: [[L('organized'), 1], [L('corrected'), 1], [L('videos'), 0]],
       complete: [[L('organized'), 1], [L('corrected'), 1], [L('videosSub'), 1]]
     };
-    return '<div class="plans">' + S.DB.plans.map(function (p) {
+    
+    // Lista fixa de planos para não depender de banco de dados (por enquanto)
+    var listaDePlanos = [
+      { code: 'basic', name: 'Basic', tier: 1, usd: 15 },
+      { code: 'intermediate', name: 'Intermediate', tier: 2, usd: 30 },
+      { code: 'complete', name: 'Complete', tier: 3, usd: 50 }
+    ];
+
+    return '<div class="plans">' + listaDePlanos.map(function (p) {
       return '<div class="plan' + (p.tier === 3 ? ' featured' : '') + '">' + (p.tier === 3 ? '<span class="badge gold">' + L('everything') + '</span>' : '') +
         '<h3>' + esc(p.name) + '</h3><div class="price">' + price(p) + '</div><ul>' +
         feats[p.code].map(function (f) { return '<li class="' + (f[1] ? '' : 'no') + '">' + f[0] + '</li>'; }).join('') +
