@@ -6,7 +6,6 @@
   var L = S.L, X = S.X, esc = S.esc, me = S.me;
   var $ = UI.$;
 
-  // Lê os parâmetros da URL (ex: ?plan=basic)
   function parseQ(s) { 
     var o = {}; 
     (s || '').split('&').forEach(function (p) { 
@@ -18,7 +17,6 @@
     return o; 
   }
 
-  // Renderiza a tela baseada no link atual
   function render() {
     var raw = location.hash.slice(1) || '/', 
         parts = raw.split('?'), 
@@ -32,13 +30,11 @@
     $('#view').innerHTML = page.html;
   }
 
-  // Ouve a mudança de página
   window.addEventListener('hashchange', function () { 
     render(); 
     window.scrollTo(0, 0); 
   });
 
-  // Controle do Modal (Janela de compra)
   var pendingPlan = null;
   function openCheckout(code) {
     var p = { name: 'Plano Selecionado' };
@@ -47,7 +43,6 @@
     $('#dlg').showModal();
   }
 
-  // Ouve os CLICKS em botões
   document.addEventListener('click', function (e) {
     var a = e.target.closest('[data-act]'); 
     if (!a) return; 
@@ -83,7 +78,6 @@
     }
   });
 
-  // Ouve o envio de FORMULÁRIOS (Busca, Cadastro, Login)
   document.addEventListener('submit', function (e) {
     var f = e.target.closest('[data-form]'); 
     if (!f) return; 
@@ -120,21 +114,19 @@
         UI.go('#/dashboard'); 
         render();
       }).catch(function(error) {
-        er.innerHTML = '<div class="msg err">E-mail ou senha incorretos.</div>'; 
+        er.innerHTML = '<div class="msg err">' + error.message + '</div>'; 
       });
     }
   });
 
-  // Fecha o modal ao clicar fora
   $('#dlg').addEventListener('click', function (e) { 
     if (e.target === $('#dlg')) $('#dlg').close(); 
   });
 
-  // Inicializa o site (Verifica se já tem alguém logado)
+  // Inicializa o site
   S.checkSession().then(function() {
     render();
   }).catch(function() {
-    render(); // Se der erro na checagem, renderiza como visitante
+    render();
   });
-
 })();
