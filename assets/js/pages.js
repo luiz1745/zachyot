@@ -104,10 +104,42 @@
     var u = me();
     if (!u || !u.is_admin) return '<div class="page"><div class="wrap"><div class="msg err">' + L('admOnly') + '</div></div></div>';
     
-    return '<div class="page"><div class="wrap"><h1>' + L('admin') + '</h1>' +
+    // O HTML do painel de admin
+    var html = '<div class="page"><div class="wrap"><h1>' + L('admin') + '</h1>' +
       '<div class="msg info">' + L('admPreview') + '</div><br>' +
-      '<div class="panel"><h2>Status da Conexão</h2><p>Você está logado como <b>' + esc(u.name) + '</b> e tem permissões de Administrador no banco de dados.</p></div>' +
-      '</div></div>';
+      '<div class="two">' +
+        '<div>' +
+          '<div class="panel"><h2>Alunos Cadastrados</h2>' +
+          '<div id="admin-users-list"><div class="empty">Carregando usuários do banco de dados...</div></div>' +
+          '</div>' +
+        '</div>' +
+        '<div>' +
+          '<div class="panel"><h2>Status do Banco</h2><p>Conectado ao Supabase com sucesso.</p><p>Logado como: <b>' + esc(u.email) + '</b></p></div>' +
+        '</div>' +
+      '</div></div></div>';
+
+    // Puxa a lista de usuários do Supabase e preenche na tela
+    setTimeout(function() {
+      window.supabaseClient.from('profiles').select('*').then(function(res) {
+        var container = document.getElementById('admin-users-list');
+        if (!container) return;
+        
+        if (res.error || !res.data || res.data.length === 0) {
+          container.innerHTML = '<div class="empty">Nenhum usuário encontrado ou erro ao carregar.</div>';
+          return;
+        }
+
+        var htmlTable = '<div class="scroll"><table><thead><tr><th>Nome</th><th>E-mail</th><th>Tipo</th><th>XP</th></tr></thead><tbody>';
+        res.data.forEach(function(user) {
+          var tipo = user.is_admin ? '<span class="badge gold">Admin</span>' : '<span class="badge">Aluno</span>';
+          htmlTable += '<tr><td>' + esc(user.name || 'Sem nome') + '</td><td>' + esc(user.email) + '</td><td>' + tipo + '</td><td>' + (user.xp || 0) + '</td></tr>';
+        });
+        htmlTable += '</tbody></table></div>';
+        container.innerHTML = htmlTable;
+      });
+    }, 100);
+
+    return html;
   }
 
   function getPage(seg, q) {
