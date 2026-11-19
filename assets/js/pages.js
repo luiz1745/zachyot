@@ -29,8 +29,8 @@
       '<details><summary>' + L('q3') + '</summary><p>' + L('a3') + '</p></details></div></section>';
   }
 
-  function pPlans() { 
-    return '<div class="page"><div class="wrap"><h1>' + L('plansTitle') + '</h1><p class="muted">' + L('plansSub') + ' ' + L('a3') + '</p>' + UI.planCards() + '</div></div>'; 
+  function pPlans() {
+    return '<div class="page"><div class="wrap"><h1>' + L('plansTitle') + '</h1><p class="muted">' + L('plansSub') + ' ' + L('a3') + '</p>' + UI.planCards() + '</div></div>';
   }
 
   function pCourses(q) {
@@ -64,7 +64,7 @@
     var head = '<div class="page"><div class="wrap"><p><a href="#/course/' + c.id + '">← ' + esc(X(c.title)) + '</a></p><h1>' + esc(X(l.title)) + '</h1>';
     if (!u) return head + '<div class="msg info">' + L('loginToOpen') + '</div><p><a class="btn btn-yellow" href="#/login">' + L('login') + '</a> <a class="btn btn-outline" href="#/signup">' + L('signup') + '</a></p></div></div>';
     if (S.tierOf(u) < l.tier) return head + '<div class="msg info">🔒 ' + L('needPlan') + '<b>' + esc(need.name) + '</b>' + L('orHigher') + '</div><p><a class="btn btn-yellow" href="#/plans">' + L('seePlans') + '</a></p></div></div>';
-    
+
     var body = '';
     if (l.type === 'material') body = '<div class="panel prose">' + l.html + '</div>';
     else if (l.type === 'video') body = '<div class="empty">' + L('videoNot') + '</div>';
@@ -73,7 +73,7 @@
         ? e.opts.map(function (o, k) { return '<label class="opt"><input type="radio" name="' + e.id + '" value="' + k + '"> ' + esc(o) + '</label>'; }).join('')
         : '<div style="max-width:12rem;margin-top:.4rem"><input name="' + e.id + '" inputmode="decimal" aria-label="answer"></div>') + '<div class="fb"></div></div>';
     }).join('') + '<button class="btn btn-yellow" type="submit">' + L('checkAnswers') + '</button></form>';
-    
+
     var gl = '<aside class="panel"><h2>' + L('glossary') + '</h2><table style="min-width:0">' + l.glossary.map(function (g) { return '<tr><td>' + esc(g.en) + '</td><td><b>' + esc(g[S.getLang()] || g.ru) + '</b></td></tr>'; }).join('') + '</table></aside>';
     return head + '<div class="two"><div>' + body + '</div>' + gl + '</div></div></div>';
   }
@@ -99,86 +99,70 @@
       '<div class="two"><div><div class="panel"><h2>' + L('continueStudy') + '</h2><p>Bem-vindo à sua área do aluno! O banco de dados está conectado.</p></div></div>' +
       '<div><div class="panel"><h2>' + L('badges') + '</h2><p>Em breve...</p></div></div></div></div></div>';
   }
+
+  /* ---------- ADMIN ---------- */
+
+  // 1) Só desenha a tela (a lista de alunos é preenchida depois, em loadAdminUsers)
   function pAdmin() {
     var u = me();
-    if (!u || !u.is_admin) return '<div class="page"><div class="wrap"><div class="msg err">' + L('admOnly') + '</div></div></div>';
+    if (!u || !u.is_admin) {
+      return '<div class="page"><div class="wrap"><div class="msg err">' + L('admOnly') + '</div></div></div>';
+    }
 
     return '<div class="page"><div class="wrap"><h1>' + L('admin') + '</h1>' +
       '<div class="two">' +
-        '<div><div class="panel"><h2>Alunos Cadastrados</h2>' +
-          '<div id="admin-users-list"><div class="empty">Carregando...</div></div>' +
-        '</div></div>' +
-        '<div><div class="panel"><h2>Sua conta</h2>' +
-          '<p>Logado como: <b>' + esc(u.email) + '</b></p>' +
-        '</div></div>' +
+        '<div>' +
+          '<div class="panel"><h2>Alunos Cadastrados</h2>' +
+            '<div id="admin-users-list"><div class="empty">Carregando...</div></div>' +
+          '</div>' +
+        '</div>' +
+        '<div>' +
+          '<div class="panel"><h2>Sua conta</h2>' +
+            '<p>Logado como: <b>' + esc(u.email) + '</b></p>' +
+          '</div>' +
+        '</div>' +
       '</div></div></div>';
   }
 
+  // 2) Busca os alunos no Supabase e preenche a tabela
   function loadAdminUsers() {
     var box = document.getElementById('admin-users-list');
     if (!box) return;
 
-    window.supabaseClient.from('profiles').select('*').order('created_at', { ascending: false })
+    if (!window.supabaseClient) {
+      box.innerHTML = '<div class="msg err">Erro: supabaseClient não encontrado (confira o store.js e a ordem dos scripts no index.html).</div>';
+      return;
+    }
+
+    window.supabaseClient
+      .from('profiles')
+      .select('*')
+      .order('created_at', { ascending: false })
       .then(function (res) {
         if (res.error) {
           box.innerHTML = '<div class="msg err">Erro: ' + esc(res.error.message) + '</div>';
           return;
         }
         if (!res.data || res.data.length === 0) {
-          box.innerHTML = '<div class="empty">Nenhum usuário (talvez falte a regra RLS de admin no Supabase).</div>';
+          box.innerHTML = '<div class="empty">Nenhum usuário encontrado (confira as regras RLS da tabela profiles no Supabase).</div>';
           return;
         }
+
         var rows = res.data.map(function (p) {
           var tipo = p.is_admin ? '<span class="badge gold">Admin</span>' : '<span class="badge">Aluno</span>';
-          return '<tr><td>' + esc(p.name || 'Sem nome') + '</td><td>' + esc(p.email) + '</td><td>' + tipo + '</td><td>' + (p.xp || 0) + '</td></tr>';
+          return '<tr><td>' + esc(p.name || 'Sem nome') + '</td><td>' + esc(p.email || '') + '</td><td>' + tipo + '</td><td>' + (p.xp || 0) + '</td></tr>';
         }).join('');
+
         box.innerHTML = '<div class="scroll"><table><thead><tr><th>Nome</th><th>E-mail</th><th>Tipo</th><th>XP</th></tr></thead><tbody>' + rows + '</tbody></table></div>';
       })
       .catch(function (err) {
-        box.innerHTML = '<div class="msg err">Erro: ' + esc(err.message) + '</div>';
+        box.innerHTML = '<div class="msg err">Erro: ' + esc(err.message || String(err)) + '</div>';
       });
   }
 
+  // 3) Chamada pelo app.js DEPOIS que a tela já foi colocada no HTML
   function afterRender(seg) {
     if (seg[0] === 'admin') loadAdminUsers();
-  }
-    
-    // O HTML do painel de admin
-    var html = '<div class="page"><div class="wrap"><h1>' + L('admin') + '</h1>' +
-      '<div class="msg info">' + L('admPreview') + '</div><br>' +
-      '<div class="two">' +
-        '<div>' +
-          '<div class="panel"><h2>Alunos Cadastrados</h2>' +
-          '<div id="admin-users-list"><div class="empty">Carregando usuários do banco de dados...</div></div>' +
-          '</div>' +
-        '</div>' +
-        '<div>' +
-          '<div class="panel"><h2>Status do Banco</h2><p>Conectado ao Supabase com sucesso.</p><p>Logado como: <b>' + esc(u.email) + '</b></p></div>' +
-        '</div>' +
-      '</div></div></div>';
-
-    // Puxa a lista de usuários do Supabase e preenche na tela
-    setTimeout(function() {
-      window.supabaseClient.from('profiles').select('*').then(function(res) {
-        var container = document.getElementById('admin-users-list');
-        if (!container) return;
-        
-        if (res.error || !res.data || res.data.length === 0) {
-          container.innerHTML = '<div class="empty">Nenhum usuário encontrado ou erro ao carregar.</div>';
-          return;
-        }
-
-        var htmlTable = '<div class="scroll"><table><thead><tr><th>Nome</th><th>E-mail</th><th>Tipo</th><th>XP</th></tr></thead><tbody>';
-        res.data.forEach(function(user) {
-          var tipo = user.is_admin ? '<span class="badge gold">Admin</span>' : '<span class="badge">Aluno</span>';
-          htmlTable += '<tr><td>' + esc(user.name || 'Sem nome') + '</td><td>' + esc(user.email) + '</td><td>' + tipo + '</td><td>' + (user.xp || 0) + '</td></tr>';
-        });
-        htmlTable += '</tbody></table></div>';
-        container.innerHTML = htmlTable;
-      });
-    }, 100);
-
-    return html;
   }
 
   function getPage(seg, q) {
@@ -198,5 +182,9 @@
     return { html: html, name: tabName };
   }
 
-    window.Pages = { getPage: getPage, afterRender: afterRender, setAdminTab: function (t) {} };
+  window.Pages = {
+    getPage: getPage,
+    afterRender: afterRender,
+    setAdminTab: function (t) {}
+  };
 })();
