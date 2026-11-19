@@ -99,10 +99,49 @@
       '<div class="two"><div><div class="panel"><h2>' + L('continueStudy') + '</h2><p>Bem-vindo à sua área do aluno! O banco de dados está conectado.</p></div></div>' +
       '<div><div class="panel"><h2>' + L('badges') + '</h2><p>Em breve...</p></div></div></div></div></div>';
   }
-
   function pAdmin() {
     var u = me();
     if (!u || !u.is_admin) return '<div class="page"><div class="wrap"><div class="msg err">' + L('admOnly') + '</div></div></div>';
+
+    return '<div class="page"><div class="wrap"><h1>' + L('admin') + '</h1>' +
+      '<div class="two">' +
+        '<div><div class="panel"><h2>Alunos Cadastrados</h2>' +
+          '<div id="admin-users-list"><div class="empty">Carregando...</div></div>' +
+        '</div></div>' +
+        '<div><div class="panel"><h2>Sua conta</h2>' +
+          '<p>Logado como: <b>' + esc(u.email) + '</b></p>' +
+        '</div></div>' +
+      '</div></div></div>';
+  }
+
+  function loadAdminUsers() {
+    var box = document.getElementById('admin-users-list');
+    if (!box) return;
+
+    window.supabaseClient.from('profiles').select('*').order('created_at', { ascending: false })
+      .then(function (res) {
+        if (res.error) {
+          box.innerHTML = '<div class="msg err">Erro: ' + esc(res.error.message) + '</div>';
+          return;
+        }
+        if (!res.data || res.data.length === 0) {
+          box.innerHTML = '<div class="empty">Nenhum usuário (talvez falte a regra RLS de admin no Supabase).</div>';
+          return;
+        }
+        var rows = res.data.map(function (p) {
+          var tipo = p.is_admin ? '<span class="badge gold">Admin</span>' : '<span class="badge">Aluno</span>';
+          return '<tr><td>' + esc(p.name || 'Sem nome') + '</td><td>' + esc(p.email) + '</td><td>' + tipo + '</td><td>' + (p.xp || 0) + '</td></tr>';
+        }).join('');
+        box.innerHTML = '<div class="scroll"><table><thead><tr><th>Nome</th><th>E-mail</th><th>Tipo</th><th>XP</th></tr></thead><tbody>' + rows + '</tbody></table></div>';
+      })
+      .catch(function (err) {
+        box.innerHTML = '<div class="msg err">Erro: ' + esc(err.message) + '</div>';
+      });
+  }
+
+  function afterRender(seg) {
+    if (seg[0] === 'admin') loadAdminUsers();
+  }
     
     // O HTML do painel de admin
     var html = '<div class="page"><div class="wrap"><h1>' + L('admin') + '</h1>' +
@@ -159,5 +198,5 @@
     return { html: html, name: tabName };
   }
 
-  window.Pages = { getPage: getPage, setAdminTab: function(t) {} };
+    window.Pages = { getPage: getPage, afterRender: afterRender, setAdminTab: function (t) {} };
 })();
